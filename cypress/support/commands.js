@@ -25,16 +25,24 @@
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
 
 Cypress.Commands.add('login', (email, senha, sucesso = true) => {
-    cy.visit('login.html')
     cy.get('#email').type(email)
     cy.get('#password').type(senha)
     cy.get('#login-btn').click()
-
     if (sucesso) {
         cy.url().should('include', 'dashboard')
     }
 
 
+})
+
+Cypress.Commands.add('loginAdmin', (email, senha, sucesso = true) => {
+    cy.visit('login.html')
+    cy.get('#email').type(email)
+    cy.get('#password').type(senha)
+    cy.get('#login-btn').click()
+    if (sucesso) {
+        cy.url().should('include', 'admin-dashboard')
+    }
 })
 
 Cypress.Commands.add('loginErro', (email, senha) => {
@@ -56,6 +64,9 @@ Cypress.Commands.add('loginApp', (email, senha) => {
         expect(response.status).to.equal(200)
         //Criar o estado da aplicação 
         window.localStorage.setItem('authToken', response.body.token)
+        window.localStorage.setItem('isAdmin', false) //localStorageopcional daqui pra baixo, dependendo da necessidade do teste
+        window.localStorage.setItem('userId', '1') //ou response.body.userId
+        window.localStorage.setItem('userName', 'Leonardo')
 
         cy.visit('dashboard.html')
         cy.get('h4').should('contain', 'Olá')
@@ -63,8 +74,7 @@ Cypress.Commands.add('loginApp', (email, senha) => {
 })
 
 Cypress.Commands.add('loginToken', (token) => {
-    cy.visit('login.html')
     window.localStorage.setItem('authToken', token)
     cy.visit('dashboard.html')
     cy.get('h4').should('contain', 'Olá')
-})
+})          
