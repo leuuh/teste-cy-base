@@ -77,4 +77,29 @@ Cypress.Commands.add('loginToken', (token) => {
     window.localStorage.setItem('authToken', token)
     cy.visit('dashboard.html')
     cy.get('h4').should('contain', 'Olá')
-})          
+})
+
+/**
+ * AppActions — Login Admin via API (sem passar pela UI de login)
+ * Realiza POST na API, obtém o token e configura o estado da
+ * aplicação diretamente no localStorage, pulando a tela de login.
+ * Isso torna os testes mais rápidos, isolados e confiáveis.
+ */
+Cypress.Commands.add('loginAdminApp', (email, senha) => {
+    cy.request({
+        method: 'POST',
+        url: 'api/login',
+        body: {
+            email: email,
+            password: senha
+        }
+    }).then((response) => {
+        expect(response.status).to.equal(200)
+
+        // Configura o estado da aplicação (App Actions)
+        window.localStorage.setItem('authToken', response.body.token)
+        window.localStorage.setItem('isAdmin', true)
+        window.localStorage.setItem('userId', response.body.userId || '2')
+        window.localStorage.setItem('userName', response.body.userName || 'Admin')
+    })
+})
