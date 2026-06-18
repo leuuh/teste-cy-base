@@ -9,13 +9,57 @@ on:
 jobs:
   cypress-run:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Use Node.js 18.18.0
+      # 1. Checkout do repositório de testes (teste-cy-base)
+      - name: Checkout dos testes Cypress
+        uses: actions/checkout@v4
+
+      # 2. Configurar Node.js compatível com Cypress 15
+      - name: Configurar Node.js 18.18.0
         uses: actions/setup-node@v4
         with:
           node-version: 18.18.0
-          
-      - run: npm install
-      - run: npx cypress run
+
+      # 3. Clonar o servidor (hub-de-leitura)
+      - name: Clonar hub-de-leitura
+        uses: actions/checkout@v4
+        with:
+          repository: leuuh/hub-de-leitura
+          path: hub-de-leitura
+
+      # 4. Instalar dependências do servidor
+      - name: Instalar dependências do hub-de-leitura
+        run: npm install
+        working-directory: hub-de-leitura
+
+      # 5. Inicializar o banco de dados
+      - name: Inicializar banco de dados
+        run: npm run db
+        working-directory: hub-de-leitura
+
+      # 6. Iniciar o servidor em background
+      - name: Iniciar servidor hub-de-leitura
+        run: NODE_ENV=production node src/server.js &
+        working-directory: hub-de-leitura
+
+      # 7. Aguardar o servidor estar disponível na porta 3000
+      - name: Aguardar servidor subir (localhost:3000)
+        run: |
+          echo "Aguardando o servidor subir..."
+          for i in {1..30}; do
+            if curl -sf http://localhost:3000 > /dev/null 2>&1; then
+              echo "✅ Servidor no ar!"
+              break
+            fi
+            echo "⏳ Tentativa $i/30 - aguardando 2s..."
+            sleep 2
+          done
+
+      # 8. Instalar dependências do Cypress
+      - name: Instalar dependências do Cypress
+        run: npm install
+
+      # 9. Rodar os testes Cypress
+      - name: Rodar testes Cypress
+        run: npx cypress run
