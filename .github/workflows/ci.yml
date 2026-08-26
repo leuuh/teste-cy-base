@@ -2,20 +2,22 @@ name: Cypress Test Suite
 
 on:
   push:
-    branches: [ main, ci ]
+    branches: [ main, ci, feat/cypress-cloud ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   cypress-run:
+    name: UI + API gravados no Cypress Cloud
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout do repositório de testes (teste-cy-base)
+      # 1. Checkout do repositorio de testes (teste-cy-base)
       - name: Checkout dos testes Cypress
         uses: actions/checkout@v4
 
-      # 2. Configurar Node.js compatível com Cypress 15
+      # 2. Configurar Node.js compativel com Cypress 15
       - name: Configurar Node.js 18.18.0
         uses: actions/setup-node@v4
         with:
@@ -28,8 +30,8 @@ jobs:
           repository: leuuh/hub-de-leitura
           path: hub-de-leitura
 
-      # 4. Instalar dependências do servidor
-      - name: Instalar dependências do hub-de-leitura
+      # 4. Instalar dependencias do servidor
+      - name: Instalar dependencias do hub-de-leitura
         run: npm install
         working-directory: hub-de-leitura
 
@@ -43,23 +45,29 @@ jobs:
         run: NODE_ENV=production node src/server.js &
         working-directory: hub-de-leitura
 
-      # 7. Aguardar o servidor estar disponível na porta 3000
+      # 7. Aguardar o servidor estar disponivel na porta 3000
       - name: Aguardar servidor subir (localhost:3000)
         run: |
           echo "Aguardando o servidor subir..."
           for i in {1..30}; do
             if curl -sf http://localhost:3000 > /dev/null 2>&1; then
-              echo "✅ Servidor no ar!"
-              break
+              echo "Servidor no ar!"
+              exit 0
             fi
-            echo "⏳ Tentativa $i/30 - aguardando 2s..."
+            echo "Tentativa $i/30 - aguardando 2s..."
             sleep 2
           done
+          echo "Servidor nao subiu em 60s"
+          exit 1
 
-      # 8. Instalar dependências do Cypress
-      - name: Instalar dependências do Cypress
+      # 8. Instalar dependencias do Cypress
+      - name: Instalar dependencias do Cypress
         run: npm install
 
-      # 9. Rodar os testes Cypress
+      # 9. Rodar os testes gravando no Cypress Cloud
       - name: Rodar testes Cypress
-        run: npx cypress run
+        run: npm run cy:record -- --tag ci,${{ github.ref_name }}
+        env:
+          CYPRESS_PROJECT_ID: ${{ vars.CYPRESS_PROJECT_ID }}
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

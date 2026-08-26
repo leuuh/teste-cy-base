@@ -40,3 +40,34 @@ npx cypress open
 ```bash
 npx cypress run
 ```
+
+---
+
+## 📊 Cypress Cloud (relatorios)
+
+As execucoes sao gravadas no Cypress Cloud para gerar o historico de metricas
+(duracao, taxa de falha, deteccao de flaky e comparacao entre execucoes).
+
+### Configuracao
+
+| Variavel | O que e | Onde vive |
+|---|---|---|
+| `CYPRESS_PROJECT_ID` | Identificador publico do projeto no Cloud | Variavel do repositorio (Settings > Variables) |
+| `CYPRESS_RECORD_KEY` | **Segredo**. Autoriza a gravacao | Secret do repositorio (Settings > Secrets) |
+
+A record key nunca e versionada. Sem ela o `--record` falha, e falha alto:
+e o comportamento desejado, melhor que gravar em silencio no projeto errado.
+
+### Rodar gravando
+
+O `hub-de-leitura` precisa estar no ar em `http://localhost:3000` antes:
+
+```bash
+export CYPRESS_PROJECT_ID=<id-do-projeto>
+export CYPRESS_RECORD_KEY=<record-key>
+npm run cy:record
+```
+
+No CI o workflow `.github/workflows/ci.yml` sobe o `hub-de-leitura`, espera a
+porta 3000 responder e so entao executa a suite com `--record`, marcando cada
+execucao com `--tag ci,<branch>` para segmentar as metricas por origem.
